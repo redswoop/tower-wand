@@ -21,6 +21,8 @@ The pack adds two items of its own, the **Tower Wand** and the **Blast Wand** (w
 
 Every building gets its own random exterior: 17 material schemes (marble with quartz pillars, mesa terracotta, gothic deepslate, prismarine, copper, purpur, mud & timber...) and one of 9 window shapes (bands, grid, ribbon, curtain wall, tall, arches, portholes, checker, slits). The ground floor is always a lobby; each floor above is a different furnished room.
 
+Utility floors have chests and barrels full of ores, gems, tools and supplies; dining halls have a pantry and kitchen full of food. Tapping a chest, door or other usable block with a wand just uses it.
+
 Inside every floor: a staircase (switching sides each floor, up to the roof), a ladder in the back corner, and a glass **elevator** at the back: stand on the iron floor and **jump to go up, sneak to go down**.
 
 **Blast Wand** (a plain fire charge works too). Tap a block to blow a ragged, scorched crater in it: blown-out center, blackstone/coal/basalt near the blast, fading out to cracked and dusty blocks, plus smoke, rubble, and short-lived fire.

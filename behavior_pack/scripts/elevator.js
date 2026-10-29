@@ -20,9 +20,10 @@ function towers() {
   return cached;
 }
 
-function jumping(p) {
-  if (p.isJumping) return true;
-  try { return p.getVelocity().y > 0.2; } catch { return false; }
+// Add-ons can't reliably see a player's jump input or speed, so a jump is
+// "your feet are clearly above the elevator floor".
+function jumping(p, standY) {
+  return p.isJumping === true || p.location.y - standY > 0.25;
 }
 
 function inCar(p) {
@@ -38,7 +39,7 @@ function inCar(p) {
     const lo = t.layoutFrom ?? 0;
     if (k < lo || k >= t.floors) return null;
     if (Math.abs(loc.y - (t.y0 + k * FLOOR_H + 1)) > 1.6) return null;
-    return { t, k, lo };
+    return { t, k, lo, standY: t.y0 + k * FLOOR_H + 1 };
   }
   return null;
 }
@@ -48,11 +49,14 @@ system.runInterval(() => {
   for (const p of world.getAllPlayers()) {
     const car = inCar(p);
     if (!car) continue;
-    const { t, k, lo } = car;
-    try { p.onScreenDisplay.setActionBar(`§bElevator§r  floor ${k + 1} of ${t.floors}\n§7Jump = up   Sneak = down`); } catch {}
+    const { t, k, lo, standY } = car;
+    const up = k + 1 < t.floors;
+    const down = k > lo;
+    const hint = up && down ? "§7Jump = up   Sneak = down" : up ? "§7Jump = up" : down ? "§7Top floor. Sneak = down" : "§7Add a floor to ride the elevator";
+    try { p.onScreenDisplay.setActionBar(`§bElevator§r  floor ${k + 1} of ${t.floors}\n${hint}`); } catch {}
     if ((cooldown.get(p.id) ?? 0) > now) continue;
     let to = null;
-    if (jumping(p) && k + 1 < t.floors) to = k + 1;
+    if (jumping(p, standY) && k + 1 < t.floors) to = k + 1;
     else if (p.isSneaking && k - 1 >= lo) to = k - 1;
     if (to === null) continue;
     cooldown.set(p.id, now + COOLDOWN);

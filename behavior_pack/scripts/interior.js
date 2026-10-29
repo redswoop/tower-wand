@@ -1,5 +1,6 @@
 import { world } from "@minecraft/server";
 import { valid, pick, first, perm, mc, chance, randInt, choice } from "./blocks.js";
+import { stock, LOOT } from "./loot.js";
 
 // Interior layout, in a local frame that's rotated so the front door is always
 // at v = 0. u runs 0..19 across the building, v runs 0..19 front to back,
@@ -102,6 +103,11 @@ function makeRoom(t, y, k) {
       const [du, dv] = STEP[headDir];
       R.put(u, 1, v, "bed", { direction: DIR4[w], head_piece_bit: false });
       R.put(u + du, 1, v + dv, "bed", { direction: DIR4[w], head_piece_bit: true });
+    },
+    // A container block filled with `stacks` random stacks from a loot table.
+    stocked(u, h, v, id, face, table, stacks) {
+      R.facing(u, h, v, id, face);
+      stock(dim, R.loc(u, h, v), LOOT[table], stacks);
     },
     planter(u, v) {
       R.put(u, 1, v, "moss_block");
@@ -270,11 +276,16 @@ function dining(R) {
         for (const v of [5, 9, 12]) R.lantern(a, 9, v, true);
       }
       // Kitchen along the back-right wall.
-      const kitchen = ["smoker", "furnace", "crafting_table", "cauldron", "barrel", "smoker", "furnace"];
-      kitchen.forEach((id, i) => R.facing(12 + i, 1, 18, id, "-v"));
+      const kitchen = ["smoker", "chest", "furnace", "cauldron", "barrel", "chest", "smoker"];
+      kitchen.forEach((id, i) => {
+        if (id === "chest" || id === "barrel") R.stocked(12 + i, 1, 18, id, "-v", "food", randInt(6, 10));
+        else R.facing(12 + i, 1, 18, id, "-v");
+      });
       for (let u = 13; u <= 17; u++) R.topSlab(u, 1, 16, "smooth_stone_slab");
-      // Pantry in the back-left corner.
-      for (let u = 2; u <= 7; u++) R.box(u, 1, 18, u, randInt(1, 3), 18, "barrel");
+      // Pantry in the back-left corner, every barrel full of food.
+      for (let u = 2; u <= 7; u++) {
+        for (let h = 1, top = randInt(1, 3); h <= top; h++) R.stocked(u, h, 18, "barrel", "-v", "food", randInt(4, 8));
+      }
       R.put(3, 1, 16, "composter");
     },
   };
@@ -294,10 +305,11 @@ function lounge(R) {
       R.chair(6, 10, wood, "-v");
       for (let v = 6; v <= 8; v++) R.topSlab(6, 1, v, `${wood}_slab`);
       R.put(6, 2, 7, chance(0.5) ? "lantern" : "cake");
-      for (let v = 6; v <= 8; v++) R.topSlab(8, 1, v, `${wood}_slab`);
-      R.put(8, 2, 7, "black_concrete");
-      R.put(8, 2, 6, "black_concrete");
-      R.put(8, 2, 8, "black_concrete");
+      // TV on a cabinet (on a thin slab it looked like it was floating).
+      for (let v = 6; v <= 8; v++) {
+        R.put(8, 1, v, v === 7 ? "jukebox" : "bookshelf");
+        R.put(8, 2, v, "black_concrete");
+      }
       R.floorLamp(4, 4, wood);
       R.floorLamp(4, 10, wood);
       // Bedrooms: beds against the right side, nightstands with lamps.
@@ -332,11 +344,16 @@ function utility(R) {
     floor: (u, v) => ((u === 8 || u === 11) && v < 16 ? (v % 2 ? "minecraft:yellow_concrete" : "minecraft:black_concrete") : base),
     light: () => pick(["minecraft:sea_lantern", "minecraft:pearlescent_froglight"]),
     decorate() {
-      // Storage racks.
+      // Storage racks full of ores, tools and supplies. Nothing goes on top of
+      // a chest: a chest with a solid block above it won't open.
       for (let v = 3; v <= 13; v++) {
-        R.box(4, 1, v, 4, 3, v, "barrel");
-        R.facing(7, 1, v, chance(0.5) ? "chest" : "barrel", "-u");
-        if (chance(0.6)) R.put(7, 2, v, "barrel");
+        for (let h = 1; h <= 3; h++) R.stocked(4, h, v, "barrel", "+u", "supplies", randInt(3, 6));
+        if (chance(0.5)) {
+          R.stocked(7, 1, v, "chest", "-u", "supplies", randInt(6, 10));
+        } else {
+          R.stocked(7, 1, v, "barrel", "-u", "supplies", randInt(3, 6));
+          if (chance(0.6)) R.stocked(7, 2, v, "barrel", "-u", "supplies", randInt(3, 6));
+        }
       }
       // Workshop line on the right.
       for (let v = 3; v <= 13; v++) R.facing(15, 1, v, choice(WORKSTATIONS), "-u");

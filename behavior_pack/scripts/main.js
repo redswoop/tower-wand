@@ -155,10 +155,19 @@ function onUse(player, itemStack, loc) {
 world.afterEvents.itemUse.subscribe(({ source, itemStack }) => onUse(source, itemStack));
 // The custom wands are "usable" items, which fire this one on a tap in the air.
 world.afterEvents.itemStartUse.subscribe(({ source, itemStack }) => onUse(source, itemStack));
+// Blocks you use by tapping them. Tapping one with a wand uses the block as
+// normal (opens the chest, rings the bell...) instead of building or blasting.
+const USABLE = /chest|barrel|shulker|door|gate|button|lever|furnace|smoker|crafting|smithing|anvil|grindstone|stonecutter|loom|cartography|fletching|enchanting|lectern|bed$|bell|jukebox|noteblock|cake|cauldron|composter|brewing|hopper|dropper|dispenser|beacon|sign|repeater|comparator|crafter|decorated_pot|chiseled_bookshelf|campfire/;
+
+function usable(block) {
+  if (USABLE.test(block.typeId)) return true;
+  try { return !!block.getComponent("minecraft:inventory"); } catch { return false; }
+}
+
 world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
   const id = ev.itemStack?.typeId;
-  if (!isWand(id)) return;
-  ev.cancel = true; // no opening doors/chests or lighting fires with the wands
+  if (!isWand(id) || usable(ev.block)) return;
+  ev.cancel = true; // the tap is for the wand (and a fire charge shouldn't light fires)
   if (ev.isFirstEvent === false) return; // holding a tap repeats the event
   const { player, itemStack } = ev;
   const loc = ev.block.location;
