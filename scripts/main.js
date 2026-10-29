@@ -8,6 +8,7 @@ import { blast, undoRecord } from "./blast.js";
 import { THEMES } from "./interior.js";
 import "./elevator.js";
 
+export const VERSION = "1.2.1"; // keep in sync with manifest.json (build.sh checks)
 const TOWER_WAND = "minecraft:blaze_rod";
 const BLAST_WAND = "minecraft:fire_charge";
 const BLAST_SIZES = { normal: 4, big: 6, huge: 9 };
@@ -158,6 +159,11 @@ world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
   const { player, itemStack } = ev;
   const loc = ev.block.location;
   system.run(() => onUse(player, itemStack, loc));
+});
+
+// Say which version is running, so it's easy to tell after an update.
+world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
+  if (initialSpawn) player.sendMessage(`§7Tower Wand ${VERSION} loaded. Blaze rod = build, fire charge = blast.`);
 });
 
 // /scriptevent tower:floor|new|menu|undo   (works from command blocks via execute as @p)
