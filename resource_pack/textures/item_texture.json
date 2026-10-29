@@ -1,0 +1,12 @@
+{
+  "resource_pack_name": "towerwand",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "towerwand_tower_wand": {
+      "textures": "textures/items/tower_wand"
+    },
+    "towerwand_blast_wand": {
+      "textures": "textures/items/blast_wand"
+    }
+  }
+}

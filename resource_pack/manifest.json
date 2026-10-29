@@ -1,0 +1,39 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Tower Wand 1.4.0 (art)",
+    "description": "Icons for the Tower Wand and Blast Wand.",
+    "uuid": "59c9e2ec-c403-4663-8b60-49e2285fd133",
+    "version": [
+      1,
+      4,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      90
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "23bd51a2-9486-4bbf-b7c1-c072d9ddb612",
+      "version": [
+        1,
+        4,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "132d36fd-1e17-4d48-b346-1d4728f559f6",
+      "version": [
+        1,
+        4,
+        0
+      ]
+    }
+  ]
+}

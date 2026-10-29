@@ -8,9 +8,11 @@ import { blast, undoRecord } from "./blast.js";
 import { THEMES } from "./interior.js";
 import "./elevator.js";
 
-export const VERSION = "1.3.0"; // keep in sync with manifest.json (build.sh checks)
-const TOWER_WAND = "minecraft:blaze_rod";
-const BLAST_WAND = "minecraft:fire_charge";
+export const VERSION = "1.4.0"; // keep in sync with the manifests (build.sh checks)
+// Our own items, plus the vanilla ones older versions used (still work).
+const TOWER_WANDS = new Set(["towerwand:tower_wand", "minecraft:blaze_rod"]);
+const BLAST_WANDS = new Set(["towerwand:blast_wand", "minecraft:fire_charge"]);
+const isWand = (id) => TOWER_WANDS.has(id) || BLAST_WANDS.has(id);
 const BLAST_SIZES = { normal: 4, big: 6, huge: 9 };
 const UNDO_DEPTH = 5;
 
@@ -133,9 +135,9 @@ function debounced(player) {
 // loc: the block that was tapped, if any.
 function onUse(player, itemStack, loc) {
   const id = itemStack?.typeId;
-  if (id !== TOWER_WAND && id !== BLAST_WAND) return;
+  if (!isWand(id)) return;
   if (!debounced(player)) return;
-  if (id === TOWER_WAND) {
+  if (TOWER_WANDS.has(id)) {
     if (player.isSneaking) towerMenu(player);
     else tap(player);
     return;
@@ -151,9 +153,11 @@ function onUse(player, itemStack, loc) {
 // fires on every attempt (the after-event only when something happens), but is
 // read-only, so the work is deferred to the next tick.
 world.afterEvents.itemUse.subscribe(({ source, itemStack }) => onUse(source, itemStack));
+// The custom wands are "usable" items, which fire this one on a tap in the air.
+world.afterEvents.itemStartUse.subscribe(({ source, itemStack }) => onUse(source, itemStack));
 world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
   const id = ev.itemStack?.typeId;
-  if (id !== TOWER_WAND && id !== BLAST_WAND) return;
+  if (!isWand(id)) return;
   ev.cancel = true; // no opening doors/chests or lighting fires with the wands
   if (ev.isFirstEvent === false) return; // holding a tap repeats the event
   const { player, itemStack } = ev;
@@ -162,9 +166,10 @@ world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
 });
 
 // ---- Free wands --------------------------------------------------------------
+// [item, fallback if the custom item isn't loaded, lore]
 const STARTER = [
-  [TOWER_WAND, "§6Tower Wand", ["§7Tap a block to build"]],
-  [BLAST_WAND, "§cBlast Wand", ["§7Tap a block to blow it up"]],
+  ["towerwand:tower_wand", "minecraft:blaze_rod", ["§7Tap a block to build"]],
+  ["towerwand:blast_wand", "minecraft:fire_charge", ["§7Tap a block to blow it up"]],
 ];
 
 // Hand out whichever wands the player doesn't already carry.
@@ -177,23 +182,22 @@ function giveWands(player) {
     const it = inv.getItem(i);
     if (it) have.add(it.typeId);
   }
-  for (const [id, name, lore] of STARTER) {
+  for (const [id, fallback, lore] of STARTER) {
     if (have.has(id)) continue;
-    try {
-      const item = new ItemStack(id, 1);
-      item.nameTag = name;
-      item.setLore(lore);
-      inv.addItem(item);
-    } catch (e) {
-      console.warn(`[TowerWand] couldn't give ${id}: ${e}`);
+    let item;
+    try { item = new ItemStack(id, 1); } catch {
+      if (have.has(fallback)) continue;
+      item = new ItemStack(fallback, 1);
     }
+    try { item.setLore(lore); } catch {}
+    try { inv.addItem(item); } catch (e) { console.warn(`[TowerWand] couldn't give ${id}: ${e}`); }
   }
 }
 
 // On joining a world: say which version is running and top up the wands.
 world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
   if (!initialSpawn) return;
-  player.sendMessage(`§7Tower Wand ${VERSION} loaded. Blaze rod = build, fire charge = blast.`);
+  player.sendMessage(`§7Tower Wand ${VERSION} loaded.`);
   giveWands(player);
 });
 
