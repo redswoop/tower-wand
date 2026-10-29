@@ -12,9 +12,15 @@ On the device that **hosts** the world (iPad, phone, or Windows):
 
 ## Use
 
-- **Use a blaze rod** with no tower nearby: starts a tower just in front of you, door facing you.
-- **Use it again** within ~60 blocks of a tower: adds a floor on top.
-- **Sneak + use**: menu (add 5 floors, new tower here, remove top floor, forget tower).
-- Command blocks: `/execute as @p run scriptevent tower:floor` adds a floor for the nearest player.
+**Tower Wand: blaze rod.** On touch screens, tap a *block* (the ground), not the sky.
+- Tap while standing **inside** a building: adds a floor.
+- Tap anywhere else: starts a **new building** in front of you, in a random color scheme.
+- **Sneak + tap**: menu (add 5 floors, add a wrecked floor, new building, remove top floor, undo last blast).
 
-Each floor: white walls with windows on all sides, deepslate corners and trim, ceiling lights, and a ladder in the corner up through every floor.
+**Blast Wand: fire charge.** Tap a block to blow a ragged, scorched crater in it: blown-out center, blackstone/coal/basalt near the blast, fading out to cracked and dusty blocks, plus smoke, rubble, and short-lived fire.
+- **Sneak + tap**: menu (big blast, HUGE blast, undo last blast).
+- Undo remembers your last 5 blasts (until the world is closed). Chests, command blocks and bedrock are never touched.
+
+Each floor: walls with windows on all sides, corner pillars and trim, ceiling lights, and a ladder in the corner up through every floor.
+
+Command blocks: `/execute as @p run scriptevent tower:floor` (also `tower:menu`, `tower:undo`).

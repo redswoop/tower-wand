@@ -4,7 +4,7 @@
     "name": "Tower Wand",
     "description": "Use a blaze rod to build a 20x20 tower, one 10-high floor per use.",
     "uuid": "132d36fd-1e17-4d48-b346-1d4728f559f6",
-    "version": [1, 0, 2],
+    "version": [1, 1, 0],
     "min_engine_version": [1, 21, 90]
   },
   "modules": [
@@ -13,7 +13,7 @@
       "language": "javascript",
       "uuid": "b1a640e5-04e2-4d6d-a83a-646c23a68476",
       "entry": "scripts/main.js",
-      "version": [1, 0, 2]
+      "version": [1, 1, 0]
     }
   ],
   "dependencies": [
