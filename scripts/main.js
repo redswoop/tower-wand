@@ -241,9 +241,17 @@ function onWand(player, itemStack) {
 }
 
 // Right-click in the air (mouse/controller). Touch screens don't send this for
-// items with no use action, so also trigger on tapping a block.
+// items with no use action, so also trigger on tapping a block. The before-event
+// fires on every attempt (the after-event only when something happens), but is
+// read-only, so the build is deferred to the next tick.
 world.afterEvents.itemUse.subscribe(({ source, itemStack }) => onWand(source, itemStack));
-world.afterEvents.playerInteractWithBlock.subscribe(({ player, itemStack }) => onWand(player, itemStack));
+world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
+  if (ev.itemStack?.typeId !== WAND) return;
+  ev.cancel = true; // don't also open doors/chests with the wand
+  if (!ev.isFirstEvent) return; // holding a tap repeats the event
+  const { player, itemStack } = ev;
+  system.run(() => onWand(player, itemStack));
+});
 
 // /scriptevent tower:floor | tower:new | tower:menu   (works from command blocks too)
 system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) => {
