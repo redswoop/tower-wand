@@ -231,14 +231,19 @@ function menu(player) {
 // ---- Events -----------------------------------------------------------------
 const lastUse = new Map();
 
-world.afterEvents.itemUse.subscribe(({ source: player, itemStack }) => {
+function onWand(player, itemStack) {
   if (itemStack?.typeId !== WAND) return;
   const now = Date.now();
   if (now - (lastUse.get(player.id) ?? 0) < 400) return;
   lastUse.set(player.id, now);
   if (player.isSneaking) menu(player);
   else addFloors(player, 1);
-});
+}
+
+// Right-click in the air (mouse/controller). Touch screens don't send this for
+// items with no use action, so also trigger on tapping a block.
+world.afterEvents.itemUse.subscribe(({ source, itemStack }) => onWand(source, itemStack));
+world.afterEvents.playerInteractWithBlock.subscribe(({ player, itemStack }) => onWand(player, itemStack));
 
 // /scriptevent tower:floor | tower:new | tower:menu   (works from command blocks too)
 system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) => {
