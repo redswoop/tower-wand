@@ -12,6 +12,8 @@ On the device that **hosts** the world (iPad, phone, or Windows):
 
 ## Use
 
+Everyone who joins a world with the pack gets a **Tower Wand** (blaze rod) and a **Blast Wand** (fire charge) if they don't already carry one, and chat says which version is running (e.g. "Tower Wand 1.3.0 loaded"). The pack shows up as "Tower Wand 1.3.0" in Minecraft's pack lists.
+
 **Tower Wand: blaze rod.** On touch screens, tap a *block* (the ground), not the sky.
 - Tap while standing **inside** a building: adds a random floor.
 - Tap anywhere else: starts a **new building** in front of you.
@@ -25,4 +27,4 @@ Inside every floor: a staircase (switching sides each floor, up to the roof), a 
 - **Sneak + tap**: menu (big blast, HUGE blast, undo last blast).
 - Undo remembers your last 5 blasts (until the world is closed). Chests, command blocks and bedrock are never touched.
 
-Command blocks: `/execute as @p run scriptevent tower:floor` (also `tower:menu`, `tower:undo`).
+Command blocks: `/execute as @p run scriptevent tower:floor` (also `tower:menu`, `tower:undo`, `tower:wands`).

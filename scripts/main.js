@@ -1,4 +1,4 @@
-import { world, system } from "@minecraft/server";
+import { world, system, ItemStack } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import {
   loadTowers, saveTowers, towerUnder, nearestTower, overlaps,
@@ -8,7 +8,7 @@ import { blast, undoRecord } from "./blast.js";
 import { THEMES } from "./interior.js";
 import "./elevator.js";
 
-export const VERSION = "1.2.1"; // keep in sync with manifest.json (build.sh checks)
+export const VERSION = "1.3.0"; // keep in sync with manifest.json (build.sh checks)
 const TOWER_WAND = "minecraft:blaze_rod";
 const BLAST_WAND = "minecraft:fire_charge";
 const BLAST_SIZES = { normal: 4, big: 6, huge: 9 };
@@ -161,15 +161,47 @@ world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
   system.run(() => onUse(player, itemStack, loc));
 });
 
-// Say which version is running, so it's easy to tell after an update.
+// ---- Free wands --------------------------------------------------------------
+const STARTER = [
+  [TOWER_WAND, "§6Tower Wand", ["§7Tap a block to build"]],
+  [BLAST_WAND, "§cBlast Wand", ["§7Tap a block to blow it up"]],
+];
+
+// Hand out whichever wands the player doesn't already carry.
+function giveWands(player) {
+  let inv;
+  try { inv = player.getComponent("minecraft:inventory")?.container; } catch {}
+  if (!inv) return;
+  const have = new Set();
+  for (let i = 0; i < inv.size; i++) {
+    const it = inv.getItem(i);
+    if (it) have.add(it.typeId);
+  }
+  for (const [id, name, lore] of STARTER) {
+    if (have.has(id)) continue;
+    try {
+      const item = new ItemStack(id, 1);
+      item.nameTag = name;
+      item.setLore(lore);
+      inv.addItem(item);
+    } catch (e) {
+      console.warn(`[TowerWand] couldn't give ${id}: ${e}`);
+    }
+  }
+}
+
+// On joining a world: say which version is running and top up the wands.
 world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
-  if (initialSpawn) player.sendMessage(`§7Tower Wand ${VERSION} loaded. Blaze rod = build, fire charge = blast.`);
+  if (!initialSpawn) return;
+  player.sendMessage(`§7Tower Wand ${VERSION} loaded. Blaze rod = build, fire charge = blast.`);
+  giveWands(player);
 });
 
-// /scriptevent tower:floor|new|menu|undo   (works from command blocks via execute as @p)
+// /scriptevent tower:floor|menu|undo|wands   (works from command blocks via execute as @p)
 system.afterEvents.scriptEventReceive.subscribe(({ id, sourceEntity: p }) => {
   if (!id.startsWith("tower:") || p?.typeId !== "minecraft:player") return;
   if (id === "tower:floor") tap(p);
   else if (id === "tower:menu") towerMenu(p);
   else if (id === "tower:undo") undoBlast(p);
+  else if (id === "tower:wands") giveWands(p);
 });
