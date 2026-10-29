@@ -5,6 +5,8 @@ import {
   buildFloor, removeTopFloor, newTowerAt,
 } from "./tower.js";
 import { blast, undoRecord } from "./blast.js";
+import { THEMES } from "./interior.js";
+import "./elevator.js";
 
 const TOWER_WAND = "minecraft:blaze_rod";
 const BLAST_WAND = "minecraft:fire_charge";
@@ -35,10 +37,10 @@ function tap(player) {
   const towers = loadTowers();
   let t = towerUnder(towers, player.dimension.id, player.location);
   if (!t) {
-    const fresh = newTowerAt(player.dimension.id, player.location, player.getRotation().y);
-    t = towers.find((o) => o.dim === fresh.dim && overlaps(o, fresh));
+    const candidate = newTowerAt(player.dimension.id, player.location, player.getRotation().y);
+    t = towers.find((o) => o.dim === candidate.dim && overlaps(o, candidate));
     if (!t) {
-      t = fresh;
+      t = candidate;
       towers.push(t);
       player.sendMessage("§bNew building!");
     }
@@ -46,39 +48,41 @@ function tap(player) {
   build(player, t, towers, 1);
 }
 
+// Sneak + blaze rod: pick what kind of floor to add (or other tower actions).
 function towerMenu(player) {
-  new ActionFormData()
+  const themeKeys = Object.keys(THEMES);
+  const actions = [
+    ["Random floor", (t, towers) => build(player, t, towers, 1)],
+    ...themeKeys.map((key) => [THEMES[key].name, (t, towers) => build(player, t, towers, 1, { theme: key })]),
+    ["Wrecked floor (random)", (t, towers) => build(player, t, towers, 1, { ruined: true })],
+    ["Add 5 random floors", (t, towers) => build(player, t, towers, 5)],
+    ["New building in front of me", (_, towers) => build(player, fresh(player, towers), towers, 1)],
+    ["Remove top floor", (t, towers) => {
+      if (!t) { player.sendMessage("§cNo building nearby."); return; }
+      player.sendMessage(removeTopFloor(t));
+      saveTowers(t.floors > 0 ? towers : towers.filter((x) => x !== t));
+    }],
+    ["Undo last blast", () => undoBlast(player)],
+  ];
+  const form = new ActionFormData()
     .title("Tower Wand")
-    .body("Tap inside a building to add a floor. Tap outside to start a new one.")
-    .button("Add 1 floor")
-    .button("Add 5 floors")
-    .button("Add a wrecked floor")
-    .button("New building in front of me")
-    .button("Remove top floor")
-    .button("Undo last blast")
-    .show(player)
-    .then((res) => {
-      if (res.canceled) return;
-      const towers = loadTowers();
-      let t = targetTower(towers, player);
-      const fresh = () => {
-        const n = newTowerAt(player.dimension.id, player.location, player.getRotation().y);
-        towers.push(n);
-        return n;
-      };
-      switch (res.selection) {
-        case 0: build(player, t ?? fresh(), towers, 1); break;
-        case 1: build(player, t ?? fresh(), towers, 5); break;
-        case 2: build(player, t ?? fresh(), towers, 1, { ruined: true }); break;
-        case 3: build(player, fresh(), towers, 1); break;
-        case 4:
-          if (!t) { player.sendMessage("§cNo building nearby."); return; }
-          player.sendMessage(removeTopFloor(t));
-          saveTowers(t.floors > 0 ? towers : towers.filter((x) => x !== t));
-          break;
-        case 5: undoBlast(player); break;
-      }
-    });
+    .body("Pick the next floor for the building you're in (or the closest one). A plain tap adds a random floor.");
+  for (const [label] of actions) form.button(label);
+  form.show(player).then((res) => {
+    if (res.canceled || res.selection === undefined) return;
+    const towers = loadTowers();
+    const t = targetTower(towers, player);
+    const [label, run] = actions[res.selection];
+    // Floor-adding actions start a new building if there's none nearby.
+    const needsTower = !["Remove top floor", "Undo last blast", "New building in front of me"].includes(label);
+    run(t ?? (needsTower ? fresh(player, towers) : null), towers);
+  });
+}
+
+function fresh(player, towers) {
+  const n = newTowerAt(player.dimension.id, player.location, player.getRotation().y);
+  towers.push(n);
+  return n;
 }
 
 // ---- Blasts -----------------------------------------------------------------
